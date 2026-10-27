@@ -1,0 +1,277 @@
+/* Fonte arredondada (sem internet, usa a reserva) */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap');
+
+/* ---------- VARIÁVEIS: cores usadas no app inteiro ---------- */
+:root {
+  --fundo: #131f24; --cartao: #202f36; --linha: #37464f;
+  --suave: #afafaf; --cinza: #5d6d76;                 /* cinza dos elementos apagados */
+  --verde: #58cc02;   --verde-esc: #46a302;
+  --azul: #1cb0f6;    --azul-esc: #1899d6;
+  --ar: #d9ecf5;      --ar-esc: #9fb8c4;
+  --laranja: #ff6a2b; --laranja-esc: #d4501a;
+  --pula: cubic-bezier(.34, 1.56, .64, 1);            /* curva "quique" */
+  --fonte: "Nunito", "Segoe UI", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { min-height: 100%; }
+body { font-family: var(--fonte); font-weight: 700; color: #fff; background: var(--fundo); display: flex; justify-content: center; }
+.app { width: 100%; max-width: 480px; padding: calc(env(safe-area-inset-top) + 20px) 16px 130px; }
+.oculta { display: none !important; }   /* o JS usa esta classe para esconder telas */
+h3 { font-size: 1.35rem; font-weight: 900; margin-bottom: 16px; }
+
+/* REGRA DE OURO DOS SVGs: todo "transform-origin" escrito em px aqui dentro é medido
+   a partir do canto do desenho (transform-box: view-box). Assim cada peça gira/cresce
+   em volta do ponto certo e nunca "foge" do lugar */
+.gota, .redemoinho, .furacao, .balanco, .bloco, .volume, .pulso { transform-box: view-box; }
+
+/* =========================================================
+   SEQUÊNCIA + SETA DO AANG
+   ========================================================= */
+.streak { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 18px 16px; margin-bottom: 20px; border-radius: 20px; background: var(--cartao); border: 2px solid var(--linha); box-shadow: 0 5px 0 var(--linha); }
+.streak strong { font-size: 1.2rem; font-weight: 900; color: var(--suave); transition: color 1s 1.2s; }
+.streak b { font-size: 2.6rem; color: #fff; }
+.seta { position: relative; width: 46px; height: 64px; transition: filter 1s 1.2s; }
+.seta svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.seta-base path { fill: var(--linha); }                       /* seta apagada: cinza */
+/* Seta acesa: escondida por um recorte que cobre tudo (inset 100% embaixo) */
+.seta-luz { clip-path: inset(0 0 100% 0); transition: clip-path 1.6s cubic-bezier(.5, 0, .2, 1); }
+/* Dia completo: o recorte abre de cima para baixo (a luz "desce" pela seta) */
+.streak.completo .seta-luz { clip-path: inset(0 0 0 0); }
+.streak.completo .seta { filter: drop-shadow(0 0 10px #7fd0ff); animation: seta-pulsa 2s ease-in-out 1.6s infinite; }
+.streak.completo strong { color: #7fd0ff; }
+@keyframes seta-pulsa { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+
+/* =========================================================
+   CARTÕES
+   ========================================================= */
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+.card {
+  position: relative; overflow: hidden;                  /* nada passa da borda do cartão */
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px; border-radius: 24px;
+  background: var(--cartao); border: 2px solid var(--linha); box-shadow: 0 5px 0 var(--linha);
+  transition: background .6s, border-color .6s, box-shadow .6s;
+}
+/* O desenho fica sempre dentro do próprio quadrado (overflow hidden) */
+.card svg { width: 100%; max-width: 150px; height: auto; display: block; overflow: hidden; }
+.card.ar    { --on: var(--ar);      --onesc: var(--ar-esc); }
+.card.terra { --on: var(--verde);   --onesc: var(--verde-esc); }
+.card.agua  { --on: var(--azul);    --onesc: var(--azul-esc); }
+.card.fogo  { --on: var(--laranja); --onesc: var(--laranja-esc); }
+/* Aceso: borda e sombra coloridas + pulinho de entrada */
+.card.on {
+  border-color: var(--on); box-shadow: 0 5px 0 var(--onesc);
+  background: color-mix(in srgb, var(--on) 12%, var(--cartao));
+  animation: estoura .6s var(--pula);
+}
+@keyframes estoura { 0% { transform: scale(.85); } 60% { transform: scale(1.06); } 100% { transform: scale(1); } }
+
+/* Brilho colorido atrás do desenho: só aparece aceso e "respira" */
+.brilho { fill: var(--on); opacity: 0; transition: opacity .8s; }
+.card.on .brilho { opacity: .18; animation: respira 3s ease-in-out infinite; }
+@keyframes respira { 50% { opacity: .32; } }
+
+/* Animação reutilizada: faz o traço "correr" ao longo de uma linha (--p = tamanho do ciclo) */
+@keyframes corre { to { stroke-dashoffset: calc(var(--p) * -1px); } }
+
+/* ---------- 🔥 FOGO ---------- */
+.toras rect { fill: #4a5a63; transition: fill .6s; }
+.fogo.on .toras rect { fill: #8a5530; }
+/* Chama fraca cinza: pulsa devagarinho e some ao acender */
+.chama-fraca { fill: var(--cinza); transform-box: fill-box; transform-origin: 50% 100%; animation: fraca 3s ease-in-out infinite; transition: opacity .4s; }
+.fogo.on .chama-fraca { opacity: 0; }
+@keyframes fraca { 50% { transform: scale(.8, .9); opacity: .6; } }
+/* Entrada: cada língua cresce do zero ao seu tamanho (--s), uma depois da outra (--i) */
+.entra { transform: scale(0); transform-box: fill-box; transform-origin: 50% 100%; transition: transform .7s var(--pula) calc(var(--i) * .09s); }
+.fogo.on .entra { transform: scale(var(--s)); }
+/* Tremulação contínua: estica, encolhe e entorta, cada língua em ritmo próprio */
+.lingua { transform-box: fill-box; transform-origin: 50% 100%; animation: tremula calc(.7s + var(--i) * .08s) ease-in-out infinite alternate; animation-delay: calc(var(--i) * -.17s); }
+@keyframes tremula {
+  from { transform: scale(1, 1) skewX(0); }
+  50%  { transform: scale(.9, 1.14) skewX(4deg); }
+  to   { transform: scale(1.06, .9) skewX(-4deg); }
+}
+/* Fagulhas sobem e somem */
+.fagulha { fill: #ffd34d; opacity: 0; }
+.fogo.on .fagulha { animation: sobe 2s ease-out infinite; animation-delay: var(--d); }
+@keyframes sobe {
+  0% { transform: translate(0, 0); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translate(calc(var(--x) * 1px), -60px); opacity: 0; }
+}
+/* Botão da foto: pequeno, e some (sem mexer no layout) quando o Fogo já está aceso */
+#btn-foto { padding: 9px 16px; font-size: .78rem; background: var(--laranja); box-shadow: 0 5px 0 var(--laranja-esc); transition: opacity .4s; }
+#btn-foto:active { box-shadow: 0 0 0 var(--laranja-esc); }
+#btn-foto:disabled { opacity: .7; }
+.fogo.on #btn-foto { opacity: 0; pointer-events: none; }
+
+/* ---------- 💧 ÁGUA ---------- */
+/* Gota apagada: borda cinza, e a água azul dentro sobe 17px por copo (--n = copos, vindo do JS) */
+.gota { transform-origin: 60px 60px; transition: transform .6s, opacity .5s; }
+.gota-borda { fill: none; stroke: var(--cinza); stroke-width: 4; }
+.nivel { fill: #4c86aa; transform: translateY(calc(106px - var(--n, 0) * 17px)); transition: transform 1s var(--pula); }
+.onda-agua { animation: ondula 1.4s linear infinite; }       /* a onda da superfície desliza */
+@keyframes ondula { to { transform: translateX(-40px); } }
+/* Ao completar: a gota encolhe e some */
+.agua.on .gota { transform: scale(.3) translateY(10px); opacity: 0; }
+
+/* REDEMOINHO: o clip-path (no HTML) é uma parede fixa em volta dele, então não sai do quadrado.
+   Aqui só controlamos a entrada: começa pequeno e girado e abre com um quique */
+.redemoinho { opacity: 0; transform: scale(.2) rotate(-200deg); transform-origin: 60px 60px; transition: transform .9s var(--pula), opacity .5s; }
+.agua.on .redemoinho { opacity: 1; transform: none; }
+/* Braços: tracejado que corre pela espiral (água fluindo). O giro em si é feito no HTML (SMIL) */
+.braco { fill: none; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 70 26; --p: 96; animation: corre 1s linear infinite; }
+.braco:nth-of-type(1) { stroke: #7fd0ff; }
+.braco:nth-of-type(2) { stroke: #1cb0f6; animation-duration: 1.3s; }
+.braco:nth-of-type(3) { stroke: #bfe9ff; animation-duration: 1.7s; }
+.olho { fill: #0f6aa8; }
+
+/* ---------- 🌀 AR ---------- */
+/* Vento fraco: riscos cinzas, finos, com traço lento; desliza para o lado e some ao acender */
+.vento-fraco { transition: transform .6s, opacity .5s; }
+.vento-fraco path { fill: none; stroke: var(--cinza); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 50 14; --p: 64; animation: corre 3s linear infinite; }
+.ar.on .vento-fraco { opacity: 0; transform: translateX(30px); }
+/* Furacão: começa pequeno e transparente e cresce com quique */
+.furacao { opacity: 0; transform: scale(.3); transform-origin: 60px 104px; transition: transform .9s var(--pula), opacity .5s; }
+.ar.on .furacao { opacity: 1; transform: none; }
+.balanco { transform-origin: 60px 104px; animation: balanco 2.4s ease-in-out infinite alternate; }  /* balança como furacão real */
+@keyframes balanco { from { transform: rotate(-4deg); } to { transform: rotate(4deg); } }
+.corpo { fill: rgba(255, 255, 255, .12); }
+/* Faixas: tracejado correndo = o furacão girando (--v = velocidade) */
+.faixa { fill: none; stroke: #eaf6ff; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 30 16; --p: 46; animation: corre var(--v, 1s) linear infinite; }
+/* Detritos: bolinhas que vão e voltam atravessando o furacão */
+.detrito { fill: #ffe27a; animation: vaivem var(--d) ease-in-out infinite alternate; }
+@keyframes vaivem { from { transform: translateX(-30px); } to { transform: translateX(30px); } }
+
+/* ---------- 🪨 TERRA ---------- */
+/* Grãos: apagado = espalhados no chão, girados e cinza. Aceso = voam para o lugar (um após o outro) */
+.grao {
+  fill: #6b645e; opacity: 1;
+  transform-box: fill-box; transform-origin: 50% 50%;
+  transform: translate(calc(var(--dx) * 1px), calc(var(--dy) * 1px)) rotate(calc(var(--r) * 1deg));
+  transition: transform .8s var(--pula) calc(var(--i) * .04s), fill .5s, opacity .2s 1s;
+}
+.terra.on .grao { fill: #8a5a35; transform: none; opacity: 0; }   /* chegam e "viram" o bloco */
+/* Bloco: surge quando os grãos chegam (atraso .7s) */
+.bloco { opacity: 0; transform: scale(.8); transform-origin: 60px 104px; transition: opacity .3s .7s, transform .5s var(--pula) .7s; }
+.terra.on .bloco { opacity: 1; transform: none; }
+.topo { fill: #7fcf5a; } .esq { fill: #8a5a35; } .dir { fill: #6b4426; }
+/* Poeira: 3 bolinhas que crescem e somem quando o bloco se forma */
+.poeira circle { fill: #c9b79c; opacity: 0; transform-box: fill-box; transform-origin: center; }
+.terra.on .poeira circle { animation: poeira .9s ease-out .75s both; }
+@keyframes poeira { 0% { transform: scale(.4); opacity: .7; } 100% { transform: scale(2.2); opacity: 0; } }
+
+/* =========================================================
+   BOTÕES 3D (afundam ao clicar)
+   ========================================================= */
+button {
+  font: inherit; font-weight: 900; font-size: .9rem; letter-spacing: .06em; text-transform: uppercase;
+  cursor: pointer; border: 0; border-radius: 16px; padding: 13px 22px; color: #fff;
+  background: var(--azul); box-shadow: 0 5px 0 var(--azul-esc);
+  transition: transform .1s, box-shadow .1s, filter .15s;
+}
+button:hover { filter: brightness(1.08); }
+button:active { transform: translateY(5px); box-shadow: 0 0 0 var(--azul-esc); }
+button:focus-visible, input:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+button.sec { margin-left: 8px; color: var(--azul); background: transparent; border: 2px solid var(--linha); box-shadow: 0 4px 0 var(--linha); }
+
+/* =========================================================
+   HISTÓRICO
+   ========================================================= */
+.legenda { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 14px; font-size: .85rem; color: var(--suave); }
+.legenda span { display: inline-flex; align-items: center; }
+.legenda i, .pontos i { display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: var(--linha); }  /* bolinha cinza = não feito */
+.legenda i { margin-right: 6px; } .pontos i { margin-left: 9px; }
+i.ar.on { background: var(--ar); } i.terra.on { background: var(--verde); }
+i.agua.on { background: var(--azul); } i.fogo.on { background: var(--laranja); }
+.pontos i.on { animation: ponto .5s var(--pula) both; }
+@keyframes ponto { from { transform: scale(0); } to { transform: scale(1); } }
+.dia { display: flex; justify-content: space-between; align-items: center; padding: 15px 18px; margin-bottom: 12px; border-radius: 18px; background: var(--cartao); border: 2px solid var(--linha); box-shadow: 0 4px 0 var(--linha); text-transform: capitalize; font-weight: 800; }
+.dia.completo { border-color: var(--verde); box-shadow: 0 4px 0 var(--verde-esc); }
+
+/* =========================================================
+   CONFIGURAÇÕES
+   ========================================================= */
+.tela label { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; margin: 12px 0; border-radius: 18px; background: var(--cartao); border: 2px solid var(--linha); box-shadow: 0 4px 0 var(--linha); font-size: .95rem; font-weight: 800; }
+.tela input[type="time"], .tela input[type="number"] { font: inherit; font-weight: 800; color: #fff; color-scheme: dark; width: 112px; padding: 9px 10px; border-radius: 12px; background: var(--fundo); border: 2px solid var(--linha); }
+.tela input:focus { border-color: var(--azul); }
+.tela > button { margin-top: 16px; }
+
+/* =========================================================
+   MENU INFERIOR
+   ========================================================= */
+.menu { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; gap: 8px; padding: 10px 12px calc(env(safe-area-inset-bottom) + 10px); background: var(--fundo); border-top: 2px solid var(--linha); }
+.menu button { flex: 1; max-width: 140px; margin: 0; padding: 8px 6px; font-size: .75rem; letter-spacing: .08em; color: var(--suave); background: transparent; border: 2px solid transparent; border-radius: 14px; box-shadow: none; }
+.menu button::before { display: block; font-size: 1.5rem; line-height: 1.3; }   /* ícone em cima do texto */
+.menu button[data-tela="inicio"]::before { content: "🏠"; }
+.menu button[data-tela="historico"]::before { content: "📅"; }
+.menu button[data-tela="config"]::before { content: "⚙️"; }
+.menu button:active { transform: scale(.95); box-shadow: none; }
+.menu button.ativo { color: var(--azul); background: rgba(28, 176, 246, .15); border-color: var(--azul); }
+.menu button.ativo::before { animation: salta .45s var(--pula); }
+@keyframes salta { from { transform: translateY(8px) scale(.7); } to { transform: none; } }
+
+/* =========================================================
+   ALARME DE ÁGUA (sem texto): disco de água + anel de arrastar
+   ========================================================= */
+/* Camada escura que cobre a tela toda, com o disco no centro */
+#alarme { position: fixed; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; background: rgba(8, 14, 18, .9); }
+/* Tamanho do disco: 86% da largura da tela, no máximo 360px. Entra "quicando" */
+.alarme-box { width: min(86vw, 360px); animation: entrar .5s var(--pula); }
+@keyframes entrar { from { transform: scale(.5); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* O desenho todo é a área de arrastar.
+   touch-action: none impede a tela de rolar enquanto você arrasta no celular */
+#dial { display: block; width: 100%; height: auto; touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; outline: none; }
+#dial:active { cursor: grabbing; }
+
+/* Ondas de "pulso" que se espalham a partir do disco */
+.pulso { fill: none; stroke: var(--azul); stroke-width: 3; opacity: 0; transform-origin: 120px 120px; animation: halo 2s ease-out infinite; }
+.pulso.p2 { animation-delay: 1s; }
+@keyframes halo { from { transform: scale(1); opacity: .6; } to { transform: scale(1.2); opacity: 0; } }
+
+/* O VOLUME DE ÁGUA: o disco inteiro pulsa (cresce e encolhe) */
+.volume { transform-origin: 120px 120px; animation: pulsa 1.6s ease-in-out infinite; }
+@keyframes pulsa { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+.vaso { fill: #0f2a3a; }                                         /* fundo do copo (parte vazia) */
+.vaso-borda { fill: none; stroke: #7fd0ff; stroke-width: 3; opacity: .8; }
+
+/* Nível da água: sobe conforme o progresso --p (de 0 a 1, escrito pelo JS).
+   Começa com 20% de água e chega a 100% quando a volta termina.
+   198 = fundo do disco; 164 = altura total que a água pode subir */
+.dial-nivel { fill: var(--azul); transform: translateY(calc(198px - (.2 + .8 * var(--p, 0)) * 164px)); }
+.dial-nivel.segunda { fill: #7fd0ff; opacity: .55; transform: translateY(calc(194px - (.2 + .8 * var(--p, 0)) * 164px)); }  /* 2ª onda: mais clara e mais alta */
+
+/* As ondas da superfície deslizam de lado (40px = 1 ciclo da onda, então o loop é contínuo) */
+.onda-dial { animation: ondula-dial 1.2s linear infinite; }
+.onda-dial.reversa { animation-duration: 1.9s; animation-direction: reverse; }
+@keyframes ondula-dial { to { transform: translateX(-40px); } }
+
+/* Anel: trilho cinza + progresso azul por cima (começa no topo, gira para a direita) */
+.trilho { fill: none; stroke: var(--linha); stroke-width: 14; }
+.progresso {
+  fill: none; stroke: var(--azul); stroke-width: 14;
+  stroke-dasharray: 653.45; stroke-dashoffset: 653.45;       /* 653.45 = comprimento do círculo (2·π·104) */
+  transform: rotate(-90deg); transform-box: view-box; transform-origin: 120px 120px;   /* começa no topo do anel */
+  opacity: 0;
+}
+
+/* Bolinha de arrastar: branca, com borda azul e sombra 3D */
+.p-sombra { fill: var(--azul-esc); }
+.p-corpo { fill: #fff; stroke: var(--azul); stroke-width: 4; }
+.p-miolo { fill: var(--azul); }
+#dial:focus-visible .trilho { stroke: #fff; }               /* destaque ao navegar pelo teclado */
+
+/* =========================================================
+   CONFETE (peças criadas pelo JS)
+   ========================================================= */
+.confete { position: fixed; z-index: 50; width: 9px; height: 15px; border-radius: 3px; pointer-events: none; animation: cai 1.1s cubic-bezier(.2, .7, .4, 1) forwards; }
+@keyframes cai {
+  from { transform: translate(-50%, -50%) rotate(0); opacity: 1; }
+  to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) + 130px)) rotate(var(--g)); opacity: 0; }
+}
+
+/* Quem pediu "reduzir movimento" no aparelho vê tudo parado */
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <!-- Ajusta ao celular e usa a tela toda -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Avatar - Equilíbrio Diário</title>
+  <meta name="theme-color" content="#131f24">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+
+    <!-- ===== TELA: INÍCIO ===== -->
+    <section id="tela-inicio" class="tela">
+
+      <!-- Sequência: a seta do Aang cinza (base) + a seta azul (luz) por cima.
+           A azul é revelada de cima para baixo quando os 4 elementos são feitos -->
+      <div class="streak" id="streak-box">
+        <div class="seta" aria-hidden="true">
+          <svg viewBox="0 0 60 84" class="seta-base"><path d="M21 0H39V44H58L30 84L2 44H21Z"/></svg>
+          <svg viewBox="0 0 60 84" class="seta-luz">
+            <defs>
+              <linearGradient id="gSeta" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#e6f7ff"/><stop offset="1" stop-color="#1cb0f6"/>
+              </linearGradient>
+            </defs>
+            <path d="M21 0H39V44H58L30 84L2 44H21Z" fill="url(#gSeta)"/>
+          </svg>
+        </div>
+        <!-- O JS escreve o número de dias dentro do <b> -->
+        <strong><b id="streak">0</b> dias</strong>
+      </div>
+
+      <div class="cards">
+
+        <!-- AR: vento fraco (apagado) -> furacão (aceso) -->
+        <article class="card ar" id="card-ar" aria-label="Ar">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="brilho" cx="60" cy="60" r="56"/>
+            <!-- Vento fraco: 3 riscos cinzas que somem quando acende -->
+            <g class="vento-fraco">
+              <path d="M18 54H66q14 0 14-11t-12-11"/>
+              <path d="M30 76H88q12 0 12 9t-10 9"/>
+              <path d="M14 98H44"/>
+            </g>
+            <!-- Furacão: corpo + faixas que giram + detritos -->
+            <g class="furacao"><g class="balanco">
+              <path class="corpo" d="M12 20Q60 34 108 20L68 102Q60 106 52 102Z"/>
+              <path class="faixa" style="--v:.9s" d="M14 22Q60 36 106 22"/>
+              <path class="faixa" style="--v:.8s" d="M22 38Q60 52 98 38"/>
+              <path class="faixa" style="--v:.7s" d="M31 54Q60 67 89 54"/>
+              <path class="faixa" style="--v:.6s" d="M39 69Q60 81 81 69"/>
+              <path class="faixa" style="--v:.5s" d="M46 83Q60 93 74 83"/>
+              <path class="faixa" style="--v:.45s" d="M52 96Q60 103 68 96"/>
+              <circle class="detrito" style="--d:.9s" cx="60" cy="30" r="2.6"/>
+              <circle class="detrito" style="--d:1.3s" cx="60" cy="58" r="2.2"/>
+              <circle class="detrito" style="--d:1.1s" cx="60" cy="82" r="2"/>
+            </g></g>
+          </svg>
+        </article>
+
+        <!-- TERRA: grãos espalhados (apagado) -> bloco de terra (aceso).
+             --dx/--dy/--r = quanto cada grão está deslocado/girado quando apagado; --i = ordem -->
+        <article class="card terra" id="card-terra" aria-label="Terra">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="brilho" cx="60" cy="64" r="56"/>
+            <g class="graos">
+              <rect class="grao" x="28" y="52" width="6" height="6" style="--dx:-10;--dy:46;--r:20;--i:0"/>
+              <rect class="grao" x="38" y="66" width="7" height="7" style="--dx:-18;--dy:34;--r:-35;--i:1"/>
+              <rect class="grao" x="46" y="80" width="6" height="6" style="--dx:-26;--dy:22;--r:50;--i:2"/>
+              <rect class="grao" x="52" y="94" width="7" height="7" style="--dx:-34;--dy:8;--r:10;--i:3"/>
+              <rect class="grao" x="60" y="50" width="6" height="6" style="--dx:6;--dy:50;--r:-20;--i:4"/>
+              <rect class="grao" x="66" y="66" width="7" height="7" style="--dx:12;--dy:38;--r:30;--i:5"/>
+              <rect class="grao" x="70" y="82" width="6" height="6" style="--dx:18;--dy:22;--r:-45;--i:6"/>
+              <rect class="grao" x="78" y="56" width="6" height="6" style="--dx:26;--dy:44;--r:15;--i:7"/>
+              <rect class="grao" x="84" y="70" width="7" height="7" style="--dx:22;--dy:30;--r:-25;--i:8"/>
+              <rect class="grao" x="88" y="84" width="6" height="6" style="--dx:14;--dy:16;--r:40;--i:9"/>
+              <rect class="grao" x="56" y="38" width="6" height="6" style="--dx:-4;--dy:60;--r:0;--i:10"/>
+              <rect class="grao" x="72" y="42" width="6" height="6" style="--dx:30;--dy:56;--r:25;--i:11"/>
+              <rect class="grao" x="34" y="82" width="6" height="6" style="--dx:-12;--dy:18;--r:25;--i:12"/>
+              <rect class="grao" x="62" y="96" width="6" height="6" style="--dx:36;--dy:6;--r:-10;--i:13"/>
+            </g>
+            <!-- Bloco isométrico: topo (grama) + 2 laterais (terra) -->
+            <g class="bloco">
+              <polygon class="topo" points="60,28 96,46 60,64 24,46"/>
+              <polygon class="esq" points="24,46 60,64 60,104 24,86"/>
+              <polygon class="dir" points="60,64 96,46 96,86 60,104"/>
+            </g>
+            <!-- Nuvem de poeira quando o bloco se forma -->
+            <g class="poeira"><circle cx="30" cy="100" r="6"/><circle cx="90" cy="100" r="6"/><circle cx="60" cy="108" r="7"/></g>
+          </svg>
+        </article>
+
+        <!-- ÁGUA: gota que enche a cada copo (apagado) -> redemoinho (aceso) -->
+        <article class="card agua" id="card-agua" aria-label="Água">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <defs>
+              <!-- Recorte em forma de gota: a água só aparece dentro dela -->
+              <clipPath id="clipGota"><path d="M60 14C60 14 28 52 28 74A32 32 0 0 0 92 74C92 52 60 14 60 14Z"/></clipPath>
+              <!-- PAREDE DO REDEMOINHO: um círculo fixo (nunca se mexe).
+                   Tudo que o redemoinho desenhar fora dele é cortado, aconteça o que acontecer -->
+              <clipPath id="clipRedemoinho"><circle cx="60" cy="60" r="58"/></clipPath>
+            </defs>
+            <circle class="brilho" cx="60" cy="60" r="56"/>
+
+            <!-- Gota -->
+            <g class="gota">
+              <g clip-path="url(#clipGota)">
+                <!-- .nivel sobe conforme o nº de copos (variável --n) -->
+                <g class="nivel"><g class="onda-agua">
+                  <path d="M-40 0q10 -6 20 0t20 0t20 0t20 0t20 0t20 0t20 0t20 0t20 0t20 0V90H-40Z"/>
+                </g></g>
+              </g>
+              <path class="gota-borda" d="M60 14C60 14 28 52 28 74A32 32 0 0 0 92 74C92 52 60 14 60 14Z"/>
+            </g>
+
+            <!-- Redemoinho: dentro da parede fixa (o clip-path fica neste <g> externo, que não gira) -->
+            <g clip-path="url(#clipRedemoinho)">
+              <g class="redemoinho">
+                <!-- O giro usa SMIL (animateTransform) com o centro escrito na mão: "60 60".
+                     Assim ele gira EXATAMENTE em volta do centro, em qualquer navegador -->
+                <g>
+                  <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="5s" repeatCount="indefinite"/>
+                  <!-- 3 braços em espiral (a mesma espiral girada 0°, 120° e 240°) -->
+                  <path class="braco" d="M60 12A48 48 0 0 1 108 60A42 42 0 0 1 66 102A36 36 0 0 1 30 66A30 30 0 0 1 60 36A24 24 0 0 1 84 60A18 18 0 0 1 66 78A12 12 0 0 1 54 66A6 6 0 0 1 60 60"/>
+                  <path class="braco" transform="rotate(120 60 60)" d="M60 12A48 48 0 0 1 108 60A42 42 0 0 1 66 102A36 36 0 0 1 30 66A30 30 0 0 1 60 36A24 24 0 0 1 84 60A18 18 0 0 1 66 78A12 12 0 0 1 54 66A6 6 0 0 1 60 60"/>
+                  <path class="braco" transform="rotate(240 60 60)" d="M60 12A48 48 0 0 1 108 60A42 42 0 0 1 66 102A36 36 0 0 1 30 66A30 30 0 0 1 60 36A24 24 0 0 1 84 60A18 18 0 0 1 66 78A12 12 0 0 1 54 66A6 6 0 0 1 60 60"/>
+                </g>
+                <circle class="olho" cx="60" cy="60" r="5"/>
+              </g>
+            </g>
+          </svg>
+        </article>
+
+        <!-- FOGO: chama cinza fraca (apagado) -> várias línguas de fogo (aceso) -->
+        <article class="card fogo" id="card-fogo" aria-label="Fogo">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <defs>
+              <linearGradient id="gFA" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#d4300f"/><stop offset="1" stop-color="#ff7a1f"/></linearGradient>
+              <linearGradient id="gFB" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ff7a1f"/><stop offset="1" stop-color="#ffc800"/></linearGradient>
+              <linearGradient id="gFC" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ffc800"/><stop offset="1" stop-color="#fff6b8"/></linearGradient>
+            </defs>
+            <circle class="brilho" cx="60" cy="70" r="56"/>
+            <!-- Toras -->
+            <g class="toras">
+              <rect x="22" y="100" width="76" height="9" rx="4.5" transform="rotate(-7 60 104)"/>
+              <rect x="22" y="100" width="76" height="9" rx="4.5" transform="rotate(7 60 104)"/>
+            </g>
+            <!-- Chama fraca (só aparece apagado) -->
+            <path class="chama-fraca" d="M60 100C51 92 51 82 60 68C69 82 69 92 60 100Z"/>
+            <!-- Línguas de fogo. Cada uma: posição (g externo) > entrada (.entra) > tremulação (.lingua).
+                 --s = tamanho final, --i = ordem de entrada -->
+            <g transform="translate(60 102)">
+              <g transform="translate(-30 0) rotate(-18)"><g class="entra" style="--s:.5;--i:1"><path class="lingua" style="--i:1" fill="url(#gFA)" d="M0 0C-15 -4 -17 -26 0 -52C17 -26 15 -4 0 0Z"/></g></g>
+              <g transform="translate(30 0) rotate(18)"><g class="entra" style="--s:.55;--i:2"><path class="lingua" style="--i:2" fill="url(#gFA)" d="M0 0C-15 -4 -17 -26 0 -52C17 -26 15 -4 0 0Z"/></g></g>
+              <g transform="translate(-16 0) rotate(-8)"><g class="entra" style="--s:.8;--i:3"><path class="lingua" style="--i:3" fill="url(#gFA)" d="M0 0C-15 -4 -17 -26 0 -52C17 -26 15 -4 0 0Z"/></g></g>
+              <g transform="translate(17 0) rotate(8)"><g class="entra" style="--s:.85;--i:4"><path class="lingua" style="--i:4" fill="url(#gFA)" d="M0 0C-15 -4 -17 -26 0 -52C17 -26 15 -4 0 0Z"/></g></g>
+              <g><g class="entra" style="--s:1.1;--i:0"><path class="lingua" style="--i:0" fill="url(#gFA)" d="M0 0C-15 -4 -17 -26 0 -52C17 -26 15 -4 0 0Z"/></g></g>
+              <g><g class="entra" style="--s:.74;--i:5"><path class="lingua" style="--i:5" fill="url(#gFB)" d="M0 0C-15 -4 -17 -26 0 -52C17 -26 15 -4 0 0Z"/></g></g>
+              <g><g class="entra" style="--s:.4;--i:6"><path class="lingua" style="--i:6" fill="url(#gFC)" d="M0 0C-15 -4 -17 -26 0 -52C17 -26 15 -4 0 0Z"/></g></g>
+            </g>
+            <!-- Fagulhas subindo -->
+            <circle class="fagulha" style="--x:10;--d:0s" cx="44" cy="70" r="2"/>
+            <circle class="fagulha" style="--x:-8;--d:-.7s" cx="60" cy="60" r="2.2"/>
+            <circle class="fagulha" style="--x:12;--d:-1.3s" cx="76" cy="68" r="1.8"/>
+            <circle class="fagulha" style="--x:-12;--d:-1.8s" cx="54" cy="74" r="1.6"/>
+          </svg>
+          <!-- Único texto que sobrou: o botão da foto (o campo de arquivo fica escondido) -->
+          <button id="btn-foto" type="button">📷 Enviar foto</button>
+          <input type="file" id="foto" accept="image/*" capture="environment" hidden>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===== TELA: HISTÓRICO ===== -->
+    <section id="tela-historico" class="tela oculta">
+      <h3>Últimos 7 dias</h3>
+      <div class="legenda">
+        <span><i class="ar on"></i>Ar</span><span><i class="terra on"></i>Terra</span>
+        <span><i class="agua on"></i>Água</span><span><i class="fogo on"></i>Fogo</span>
+      </div>
+      <div id="lista-hist"></div>
+    </section>
+
+    <!-- ===== TELA: CONFIGURAÇÕES ===== -->
+    <section id="tela-config" class="tela oculta">
+      <h3>Personalize seu dia</h3>
+      <label>Horário que acorda (Ar) <input type="time" id="cfg-acordar"></label>
+      <label>Primeira refeição (Terra) <input type="time" id="cfg-refeicao"></label>
+      <label>Horário que vai dormir <input type="time" id="cfg-dormir"></label>
+      <label>Lembrar de beber água a cada (min) <input type="number" id="cfg-intervalo" min="1" max="360"></label>
+      <button id="btn-notif" type="button">Ativar notificações</button>
+      <button id="btn-teste" type="button" class="sec">Testar alarme de água</button>
+    </section>
+  </main>
+
+  <!-- Menu fixo embaixo (data-tela = qual tela abrir) -->
+  <nav class="menu">
+    <button data-tela="inicio" class="ativo" type="button">Início</button>
+    <button data-tela="historico" type="button">Histórico</button>
+    <button data-tela="config" type="button">Config.</button>
+  </nav>
+
+  <!-- ===== ALARME DE ÁGUA (sem texto e sem sino) ===== -->
+  <div id="alarme" class="oculta">
+    <div class="alarme-box">
+      <!-- role/aria-* só ajudam leitores de tela e teclado; não aparecem na tela -->
+      <svg id="dial" viewBox="0 0 240 240" tabindex="0" role="slider"
+           aria-label="Arraste em círculo para desligar o alarme de água"
+           aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <defs>
+          <!-- Recorte circular: a água só aparece dentro do disco -->
+          <clipPath id="clipDial"><circle cx="120" cy="120" r="78"/></clipPath>
+        </defs>
+
+        <!-- Ondas de pulso que se espalham a partir do disco -->
+        <circle class="pulso" cx="120" cy="120" r="78"/>
+        <circle class="pulso p2" cx="120" cy="120" r="78"/>
+
+        <!-- Volume de água (o grupo todo pulsa) -->
+        <g class="volume">
+          <circle class="vaso" cx="120" cy="120" r="78"/>
+          <g clip-path="url(#clipDial)">
+            <!-- 2 camadas de onda: cada uma sobe conforme o progresso do arraste -->
+            <g class="dial-nivel segunda"><g class="onda-dial reversa">
+              <path d="M0 0q10-7 20 0t20 0q10-7 20 0t20 0q10-7 20 0t20 0q10-7 20 0t20 0q10-7 20 0t20 0q10-7 20 0t20 0q10-7 20 0t20 0V260H0Z"/>
+            </g></g>
+            <g class="dial-nivel"><g class="onda-dial">
+              <path d="M0 0q10-7 20 0t20 0q10-7 20 0t20 0q10-7 20 0t20 0q10-7 20 0t20 0q10-7 20 0t20 0q10-7 20 0t20 0q10-7 20 0t20 0V260H0Z"/>
+            </g></g>
+          </g>
+          <circle class="vaso-borda" cx="120" cy="120" r="78"/>
+        </g>
+
+        <!-- Anel de arrastar: trilho + progresso -->
+        <circle class="trilho" cx="120" cy="120" r="104"/>
+        <circle id="progresso" class="progresso" cx="120" cy="120" r="104"/>
+
+        <!-- Bolinha que você arrasta (o JS move ela em volta do anel) -->
+        <g id="puxador" transform="translate(120 16)">
+          <circle class="p-sombra" r="17" cy="4"/>
+          <circle class="p-corpo" r="17"/>
+          <circle class="p-miolo" r="5"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
