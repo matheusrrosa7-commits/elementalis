@@ -175,7 +175,7 @@ button {
 button:hover { filter: brightness(1.08); }
 button:active { transform: translateY(5px); box-shadow: 0 0 0 var(--azul-esc); }
 button:focus-visible, input:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
-button.sec { margin-left: 8px; color: var(--azul); background: transparent; border: 2px solid var(--linha); box-shadow: 0 4px 0 var(--linha); }
+button.sec { margin-left: 0px; color: var(--azul); background: transparent; border: 2px solid var(--linha); box-shadow: 0 4px 0 var(--linha); }
 
 /* =========================================================
    HISTÓRICO
