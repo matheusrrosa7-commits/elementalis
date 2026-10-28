@@ -330,7 +330,7 @@ $('foto').addEventListener('change', async e => {
   $('btn-foto').disabled = false;
 
   if (resultado === true) {                      // reconheceu: acende o Fogo
-    $('btn-foto').textContent = '📷 Enviar foto';
+    $('btn-foto').textContent = 'Enviar foto';
     diaAtual().fogo = true;
     ciclo();
   } else if (resultado === null) {               // IA não carregou (sem internet?)
