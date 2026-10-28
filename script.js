@@ -336,7 +336,7 @@ $('foto').addEventListener('change', async e => {
   } else if (resultado === null) {               // IA não carregou (sem internet?)
     mensagemBotao('Sem internet. Tente de novo');
   } else {                                       // carregou, mas não viu atividade física
-    mensagemBotao('Não reconhecido. Tente outra foto');
+    mensagemBotao('Não reconhecido.');
   }
 });
 
