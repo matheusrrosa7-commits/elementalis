@@ -219,23 +219,125 @@ function concluirDial() {
 desenharDial();   // posiciona a bolinha no topo assim que o app abre
 
 /* =========================================================
-   FOGO: foto da atividade física
+   FOGO: foto da atividade física (reconhecimento com IA)
    ========================================================= */
-$('btn-foto').addEventListener('click', () => $('foto').click());   // botão visível abre o campo escondido
-$('foto').addEventListener('change', e => {
+
+// Endereços das bibliotecas de IA. Elas só são baixadas quando a pessoa vai enviar a 1ª foto,
+// para o app abrir rápido
+const URL_TFJS  = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js';
+const URL_COCO  = 'https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js';
+const URL_MOBNET = 'https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js';
+
+// O que cada IA precisa ver para considerar "atividade física".
+// FORTES: sozinhos já valem. FRACOS: só valem se também houver uma pessoa na foto
+const COCO_FORTES = ['sports ball', 'tennis racket', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'skis', 'snowboard'];
+const COCO_FRACOS = ['bicycle', 'kite', 'frisbee'];
+const MOB_FORTES = ['basketball', 'soccer ball', 'volleyball', 'tennis ball', 'rugby ball', 'golf ball', 'ping-pong ball',
+  'croquet ball', 'punching bag', 'dumbbell', 'barbell', 'horizontal bar', 'parallel bars', 'balance beam', 'racket',
+  'racquet', 'ski', 'snorkel', 'swimming trunks', 'maillot', 'ballplayer', 'scuba diver', 'mountain bike',
+  'bicycle-built-for-two', 'unicycle', 'canoe', 'paddle'];
+const MOB_FRACOS = ['running shoe', 'stopwatch', 'whistle', 'alp', 'cliff', 'valley', 'lakeside', 'seashore', 'promontory', 'sandbar'];
+
+// Carrega um arquivo .js da internet e avisa quando terminou
+const carregarScript = url => new Promise((ok, erro) => {
+  const s = document.createElement('script');
+  s.src = url; s.onload = ok;
+  s.onerror = () => erro(new Error('Falha ao carregar ' + url));
+  document.head.appendChild(s);
+});
+
+// Baixa as IAs uma única vez e guarda o resultado (as próximas fotos são rápidas)
+let promessaModelos = null;
+function carregarModelos() {
+  if (!promessaModelos) {
+    promessaModelos = (async () => {
+      const m = { coco: null, mob: null };
+      try {
+        await carregarScript(URL_TFJS);
+        // cada IA é carregada separada: se uma falhar, a outra ainda funciona
+        try { await carregarScript(URL_COCO); m.coco = await cocoSsd.load(); } catch (e) { console.warn('COCO-SSD:', e); }
+        try { await carregarScript(URL_MOBNET); m.mob = await mobilenet.load({ version: 2, alpha: 1.0 }); } catch (e) { console.warn('MobileNet:', e); }
+      } catch (e) { console.warn('TensorFlow.js:', e); }
+      return m;
+    })();
+    // Se nenhuma IA carregou (ex.: sem internet), esquece o resultado para tentar de novo na próxima foto
+    promessaModelos.then(m => { if (!m.coco && !m.mob) promessaModelos = null; });
+  }
+  return promessaModelos;
+}
+
+// Analisa a foto. Devolve true (é atividade física), false (não é) ou null (IA indisponível)
+async function analisarFoto(arq) {
+  const { coco, mob } = await carregarModelos();
+  if (!coco && !mob) return null;
+
+  const url = URL.createObjectURL(arq);          // endereço temporário da foto no aparelho
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();                          // espera a imagem carregar
+
+    let pessoa = false, pontos = 0;
+
+    // IA 1 (COCO-SSD): procura pessoas e equipamentos. Só considera se tiver 50% ou mais de certeza
+    if (coco) {
+      for (const o of await coco.detect(img)) {
+        if (o.score < 0.5) continue;
+        if (o.class === 'person') pessoa = true;
+        else if (COCO_FORTES.includes(o.class)) pontos += 2;
+        else if (COCO_FRACOS.includes(o.class)) pontos += 1;
+      }
+    }
+
+    // IA 2 (MobileNet): dá os 5 palpites mais prováveis sobre o que há na foto
+    if (mob) {
+      for (const p of await mob.classify(img, 5)) {
+        if (p.probability < 0.15) continue;      // ignora palpites fracos
+        // o nome vem com sinônimos separados por vírgula ("racket, racquet"): comparamos um a um
+        const nomes = p.className.toLowerCase().split(',').map(s => s.trim());
+        if (nomes.some(n => MOB_FORTES.includes(n))) pontos += 2;
+        else if (nomes.some(n => MOB_FRACOS.includes(n))) pontos += 1;
+      }
+    }
+
+    console.log('Fogo:', { pessoa, pontos });    // aparece no console (F12) para você ajustar as regras
+    // Aceita se achou algo forte, ou algo fraco junto com uma pessoa
+    return pontos >= 2 || (pessoa && pontos >= 1);
+  } finally {
+    URL.revokeObjectURL(url);                    // libera a memória da foto
+  }
+}
+
+// Mostra uma mensagem curta no botão e depois volta ao normal
+function mensagemBotao(texto) {
+  $('btn-foto').textContent = texto;
+  setTimeout(() => { $('btn-foto').textContent = '📷 Enviar foto'; }, 3500);
+}
+
+// Ao clicar no botão: abre a câmera e, ao mesmo tempo, já começa a baixar as IAs
+$('btn-foto').addEventListener('click', () => { $('foto').click(); carregarModelos(); });
+
+// Quando uma foto é escolhida:
+$('foto').addEventListener('change', async e => {
   const arq = e.target.files[0];
-  if (!arq || !arq.type.startsWith('image/')) return;               // só aceita imagem
-  $('btn-foto').textContent = 'Analisando…';
+  e.target.value = '';                           // limpa o campo para poder enviar outra foto depois
+  if (!arq || !arq.type.startsWith('image/')) return;
+
   $('btn-foto').disabled = true;
-  // Aqui entraria o reconhecimento real (TensorFlow.js ou API de visão).
-  // Por enquanto, qualquer imagem acende o Fogo.
-  setTimeout(() => {
-    diaAtual().fogo = true;
+  $('btn-foto').textContent = 'Analisando…';
+  let resultado = false;
+  try { resultado = await analisarFoto(arq); } catch (err) { console.warn('Erro na análise:', err); }
+  $('btn-foto').disabled = false;
+
+  if (resultado === true) {                      // reconheceu: acende o Fogo
     $('btn-foto').textContent = '📷 Enviar foto';
-    $('btn-foto').disabled = false;
+    diaAtual().fogo = true;
     ciclo();
-  }, 1500);
-  e.target.value = '';
+  } else if (resultado === null) {               // IA não carregou (sem internet?)
+    mensagemBotao('Sem internet. Tente de novo');
+  } else {                                       // carregou, mas não viu atividade física
+    mensagemBotao('Não reconhecido. Tente outra foto');
+  }
 });
 
 /* =========================================================
