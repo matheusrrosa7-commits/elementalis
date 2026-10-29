@@ -472,20 +472,29 @@ document.querySelectorAll('.card').forEach(c => {
 });
 
 
+
 const musicaFundo = document.getElementById('musica-fundo');
 
 if (musicaFundo) {
-  musicaFundo.volume = 0.1;
+    musicaFundo.loop = true;
+    musicaFundo.volume = 0.2;
 
-  // Tenta começar assim que o aplicativo abre
-  musicaFundo.play().catch(() => {
-    // Se o navegador bloquear, espera o primeiro toque
-    const iniciarMusica = () => {
-      musicaFundo.play().catch(console.log);
-    };
+    async function iniciarMusica() {
+        try {
+            await musicaFundo.play();
 
-    document.addEventListener('pointerdown', iniciarMusica, {
-      once: true
-    });
-  });
+            // Remove os eventos depois que a música começar
+            document.removeEventListener('pointerdown', iniciarMusica);
+            document.removeEventListener('click', iniciarMusica);
+        } catch (erro) {
+            console.log('O navegador bloqueou a música:', erro);
+        }
+    }
+
+    // Tenta tocar ao abrir o site
+    iniciarMusica();
+
+    // Tenta novamente após a primeira interação
+    document.addEventListener('pointerdown', iniciarMusica);
+    document.addEventListener('click', iniciarMusica);
 }
