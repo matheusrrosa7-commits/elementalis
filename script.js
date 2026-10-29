@@ -471,7 +471,27 @@ document.querySelectorAll('.card').forEach(c => {
   }).observe(c, { attributes: true, attributeFilter: ['class'] });
 });
 
+
 const musicaFundo = document.getElementById('musica-fundo');
+
+if (musicaFundo) {
+  musicaFundo.volume = 0.2;
+
+  const iniciarMusica = () => {
+    musicaFundo.play().catch(erro => {
+      console.log('Não foi possível iniciar a música:', erro);
+    });
+  };
+
+  // Tenta tocar assim que o app abre
+  iniciarMusica();
+
+  // No celular, tenta novamente após o primeiro toque
+  document.addEventListener('pointerdown', iniciarMusica, {
+    once: true
+  });
+}
+
 
 if (musicaFundo) {
   musicaFundo.volume = 0.1;
