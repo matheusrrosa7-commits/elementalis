@@ -46,11 +46,8 @@ document.querySelectorAll('.menu button').forEach(b => b.addEventListener('click
 function atualizarTela() {
   const d = diaAtual(), el = elementos(d);
 
-  // Liga/desliga a classe "on" em cada cartão: é ela que dispara as animações do CSS
+  // Liga/desliga a classe "on" em cada cartão: é ela que acende o símbolo no CSS
   for (const k in el) $('card-' + k).classList.toggle('on', el[k]);
-
-  // Nível da gota de água (0 a 4 copos) -> variável CSS --n
-  $('card-agua').style.setProperty('--n', Math.min(d.agua, META_AGUA));
 
   // Sequência zera se passou um dia sem completar
   const u = estado.ultimoDiaCompleto;
@@ -98,6 +95,35 @@ function verificarHorarios() {
 }
 
 /* =========================================================
+   SOM DO ALARME (gerado pelo navegador, sem arquivo de áudio)
+   ========================================================= */
+let ctxAudio = null;   // "motor de som" do navegador
+let timerSom = null;   // repete o som enquanto o alarme está tocando
+
+// Os navegadores só liberam som depois que a pessoa toca na tela pelo menos uma vez
+document.addEventListener('pointerdown', () => {
+  if (!ctxAudio) ctxAudio = new (window.AudioContext || window.webkitAudioContext)();
+  if (ctxAudio.state === 'suspended') ctxAudio.resume();
+});
+
+// Um "plim" de gota: o tom sobe rápido e some suavemente
+function bip() {
+  if (!ctxAudio) return;                                   // ainda não houve toque na tela: fica em silêncio
+  const osc = ctxAudio.createOscillator(), vol = ctxAudio.createGain();
+  const t = ctxAudio.currentTime;
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(660, t);                    // começa grave (660 Hz)
+  osc.frequency.exponentialRampToValueAtTime(990, t + .18);// sobe para 990 Hz
+  vol.gain.setValueAtTime(.0001, t);                       // volume: sobe rápido...
+  vol.gain.exponentialRampToValueAtTime(.25, t + .03);
+  vol.gain.exponentialRampToValueAtTime(.0001, t + .35);   // ...e desaparece
+  osc.connect(vol).connect(ctxAudio.destination);
+  osc.start(t); osc.stop(t + .4);
+}
+function iniciarSom() { pararSom(); bip(); timerSom = setInterval(bip, 1200); }   // toca e repete a cada 1,2 s
+function pararSom() { clearInterval(timerSom); timerSom = null; }
+
+/* =========================================================
    ÁGUA: alarme com arraste circular
    ========================================================= */
 let proximoAgua = null, timerAlarme = null;
@@ -113,6 +139,8 @@ function verificarAgua() {
 function tocarAlarme() {
   $('alarme').classList.remove('oculta');
   zerarDial();                                                    // começa com o anel vazio e a bolinha no topo
+  cancelAnimationFrame(rafAgua); rafAgua = requestAnimationFrame(lacoAgua);   // liga a água em movimento
+  iniciarSom();                                                   // começa o "plim" repetindo
   if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
   if ('Notification' in window && Notification.permission === 'granted') new Notification('💧 Hora de beber água!');
   clearTimeout(timerAlarme);
@@ -120,6 +148,8 @@ function tocarAlarme() {
 }
 function desligarAlarme(arrastou) {
   clearTimeout(timerAlarme);
+  pararSom();
+  cancelAnimationFrame(rafAgua);
   $('alarme').classList.add('oculta');
   if (arrastou) diaAtual().agua++;                                // volta completa = +1 copo
   agendarAgua();
@@ -129,21 +159,51 @@ function desligarAlarme(arrastou) {
 /* ---------- DIAL CIRCULAR do alarme ---------- */
 const dial = $('dial');
 const RAIO = 104;                       // raio do anel (igual ao r do círculo no HTML)
-const CIRC = 2 * Math.PI * RAIO;        // comprimento do círculo (para desenhar o anel azul)
 let prog = 0;                           // progresso da volta: 0 (início) a 1 (volta completa)
 let arrastando = false, travado = false, ultimoAng = 0, animVolta = 0;
+let tempoAgua = 0, rafAgua = 0;         // tempo e controle da animação da água
+
+/* A ÁGUA QUE CIRCULA O ANEL: é uma faixa curva que vai do topo até a bolinha.
+   As duas bordas ficam onduladas, e a onda anda com o tempo (por isso parece água correndo).
+   OND = quantas ondinhas cabem na volta inteira */
+const OND = 10;
+const ponto = (th, r) => (120 + r * Math.sin(th)).toFixed(1) + ' ' + (120 - r * Math.cos(th)).toFixed(1);
+
+// Monta o desenho da faixa de água. A = ângulo até onde vai; rExt/rInt = raio de fora/dentro;
+// amp = altura da onda; fase = deslocamento da onda
+function faixaAgua(A, rExt, rInt, amp, fase) {
+  if (A < 0.02) return '';                                       // quase zerado: não desenha nada
+  const n = Math.max(8, Math.ceil(A * 28));                      // quantidade de pontos (mais = mais suave)
+  const fora = [], dentro = [];
+  for (let i = 0; i <= n; i++) {
+    const th = A * i / n;
+    fora.push(ponto(th, rExt + amp * Math.sin(OND * th - tempoAgua * 3 + fase)));
+    dentro.push(ponto(th, rInt + amp * Math.sin(OND * th - tempoAgua * 3 + fase + 2)));
+  }
+  return 'M' + fora.join('L') + 'L' + dentro.reverse().join('L') + 'Z';   // vai por fora e volta por dentro
+}
+function pintarAgua() {
+  const A = prog * 2 * Math.PI;
+  $('agua-banda').setAttribute('d', faixaAgua(A, 111, 97, 2.6, 0));        // água principal
+  $('agua-brilho').setAttribute('d', faixaAgua(A, 106, 102, 1.8, 1.3));    // reflexo mais claro no meio
+}
+// Repete a cada quadro da tela enquanto o alarme está aberto
+function lacoAgua(t) {
+  tempoAgua = t / 1000;
+  pintarAgua();
+  if (!$('alarme').classList.contains('oculta')) rafAgua = requestAnimationFrame(lacoAgua);
+}
 
 // Desenha tudo conforme o progresso atual
 function desenharDial() {
-  dial.style.setProperty('--p', prog);                                  // o CSS usa --p para subir a água
-  $('progresso').style.strokeDashoffset = CIRC * (1 - prog);            // anel azul "enche"
-  $('progresso').style.opacity = prog > 0.004 ? 1 : 0;                  // esconde o anel quando está zerado
   const a = prog * 2 * Math.PI;                                         // ângulo da bolinha (0 = topo, horário)
   $('puxador').setAttribute('transform', `translate(${120 + RAIO * Math.sin(a)} ${120 - RAIO * Math.cos(a)})`);
+  $('agua-inicio').style.opacity = prog > 0.02 ? 1 : 0;                 // ponta redonda no começo da água
   dial.setAttribute('aria-valuenow', Math.round(prog * 100));
+  pintarAgua();
 }
 
-// Ângulo (em radianos) do dedo/mouse em relação ao centro do disco. 0 = topo, cresce no sentido horário
+// Ângulo (em radianos) do dedo/mouse em relação ao centro. 0 = topo, cresce no sentido horário
 function anguloDoPonteiro(e) {
   const r = dial.getBoundingClientRect();
   const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
@@ -175,7 +235,7 @@ dial.addEventListener('pointermove', e => {
   if (prog >= 0.98) concluirDial();                  // quase uma volta completa: desliga
 });
 
-// Ao soltar antes de completar: a água desce e a bolinha volta ao topo
+// Ao soltar antes de completar: a água recua e a bolinha volta ao topo
 const soltar = () => { if (!arrastando) return; arrastando = false; if (!travado) voltarDial(); };
 dial.addEventListener('pointerup', soltar);
 dial.addEventListener('pointercancel', soltar);
@@ -209,7 +269,7 @@ function zerarDial() {
   desenharDial();
 }
 
-// Volta completa: enche a água, espera um instante para você ver, e desliga contando 1 copo
+// Volta completa: fecha o anel de água, espera um instante para você ver, e desliga contando 1 copo
 function concluirDial() {
   if (travado) return;
   travado = true; arrastando = false;
@@ -224,8 +284,8 @@ desenharDial();   // posiciona a bolinha no topo assim que o app abre
 
 // Endereços das bibliotecas de IA. Elas só são baixadas quando a pessoa vai enviar a 1ª foto,
 // para o app abrir rápido
-const URL_TFJS  = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js';
-const URL_COCO  = 'https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js';
+const URL_TFJS   = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js';
+const URL_COCO   = 'https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js';
 const URL_MOBNET = 'https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js';
 
 // O que cada IA precisa ver para considerar "atividade física".
@@ -311,7 +371,7 @@ async function analisarFoto(arq) {
 // Mostra uma mensagem curta no botão e depois volta ao normal
 function mensagemBotao(texto) {
   $('btn-foto').textContent = texto;
-  setTimeout(() => { $('btn-foto').textContent = '📷 Enviar foto'; }, 3500);
+  setTimeout(() => { $('btn-foto').textContent = 'Enviar foto'; }, 3500);
 }
 
 // Ao clicar no botão: abre a câmera e, ao mesmo tempo, já começa a baixar as IAs
@@ -374,24 +434,25 @@ setInterval(ciclo, 15000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) ciclo(); });
 
 /* =========================================================
-   CONFETE (comemoração ao acender)
+   EXPLOSÃO DE LUZ
+   Uma pequena explosão de luz na cor do elemento, no centro do cartão que acabou de acender
    ========================================================= */
-function confete(origem, qtd = 26) {
-  const r = origem.getBoundingClientRect();
-  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;      // centro do elemento
-  const cores = ['#ffc800', '#58cc02', '#1cb0f6', '#ff6a2b', '#ce82ff'];
-  for (let i = 0; i < qtd; i++) {
-    const p = document.createElement('i');
-    p.className = 'confete';
-    const ang = Math.random() * Math.PI * 2, dist = 70 + Math.random() * 130;   // direção e alcance sorteados
-    p.style.cssText = `left:${cx}px;top:${cy}px;background:${cores[i % cores.length]};` +
-      `--dx:${Math.cos(ang) * dist}px;--dy:${Math.sin(ang) * dist - 60}px;--g:${Math.random() * 720 - 360}deg`;
-    document.body.appendChild(p);
-    setTimeout(() => p.remove(), 1200);
-  }
+// Cor da luz de cada elemento (parecida com a do brilho do símbolo)
+const COR_LUZ = { 'card-ar': '#cfe8ff', 'card-terra': '#b8d83a', 'card-agua': '#46b0ff', 'card-fogo': '#ff8a3d' };
+
+function explosao(origem, cor, tamanho = 1) {
+  const r = origem.getBoundingClientRect();                    // posição do elemento na tela
+  const luz = document.createElement('div');
+  luz.className = 'luz';
+  luz.style.cssText = `left:${r.left + r.width / 2}px;top:${r.top + r.height / 2}px;--c:${cor};--r:${tamanho}`;
+  let raios = '';
+  for (let i = 0; i < 12; i++) raios += `<i style="--a:${i * 30}deg"></i>`;   // 12 raios, um a cada 30°
+  luz.innerHTML = '<b class="luz-nucleo"></b><b class="luz-anel"></b>' + raios;
+  document.body.appendChild(luz);
+  setTimeout(() => luz.remove(), 900);                          // remove depois que a animação termina
 }
 
-// Vigia cada cartão: quando ele ACENDE agora (não ao abrir o app), solta confete
+// Vigia cada cartão: quando ele ACENDE agora (não ao abrir o app), solta a explosão de luz
 const acesos = new Set();
 document.querySelectorAll('.card').forEach(c => {
   if (c.classList.contains('on')) acesos.add(c.id);
@@ -399,11 +460,23 @@ document.querySelectorAll('.card').forEach(c => {
     const on = c.classList.contains('on');
     if (on && !acesos.has(c.id)) {
       acesos.add(c.id);
-      confete(c);
+      explosao(c.querySelector('svg'), COR_LUZ[c.id]);
       if (navigator.vibrate) navigator.vibrate(40);
-      // Os 4 acesos: chuva maior de confete saindo da seta, quando ela termina de acender
-      if (document.querySelectorAll('.card.on').length === 4) setTimeout(() => confete($('streak-box'), 80), 1200);
+      // Os 4 acesos: explosão maior na seta, quando ela termina de acender de cima para baixo
+      if (document.querySelectorAll('.card.on').length === 4) {
+        setTimeout(() => explosao(document.querySelector('.seta'), '#7fd0ff', 1.4), 1500);
+      }
     }
     if (!on) acesos.delete(c.id);
   }).observe(c, { attributes: true, attributeFilter: ['class'] });
 });
+const musicaFundo = document.getElementById('musica-fundo');
+
+musicaFundo.volume = 0.1
+;
+
+document.addEventListener('click', () => {
+    musicaFundo.play().catch(erro => {
+        console.log('Erro ao tocar música:', erro);
+    });
+}, { once: true });
