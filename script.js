@@ -474,7 +474,7 @@ document.querySelectorAll('.card').forEach(c => {
 const musicaFundo = document.getElementById('musica-fundo');
 
 if (musicaFundo) {
-  musicaFundo.volume = 0.2;
+  musicaFundo.volume = 0.1;
 
   // Tenta começar assim que o aplicativo abre
   musicaFundo.play().catch(() => {
