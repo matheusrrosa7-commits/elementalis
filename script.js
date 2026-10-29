@@ -470,13 +470,21 @@ document.querySelectorAll('.card').forEach(c => {
     if (!on) acesos.delete(c.id);
   }).observe(c, { attributes: true, attributeFilter: ['class'] });
 });
+
 const musicaFundo = document.getElementById('musica-fundo');
 
-musicaFundo.volume = 0.1
-;
+if (musicaFundo) {
+  musicaFundo.volume = 0.2;
 
-document.addEventListener('click', () => {
-    musicaFundo.play().catch(erro => {
-        console.log('Erro ao tocar música:', erro);
+  // Tenta começar assim que o aplicativo abre
+  musicaFundo.play().catch(() => {
+    // Se o navegador bloquear, espera o primeiro toque
+    const iniciarMusica = () => {
+      musicaFundo.play().catch(console.log);
+    };
+
+    document.addEventListener('pointerdown', iniciarMusica, {
+      once: true
     });
-}, { once: true });
+  });
+}
